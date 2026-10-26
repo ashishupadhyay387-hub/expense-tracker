@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="PennyTrack">
+  <rect width="64" height="64" rx="14" fill="#101a2b" />
+  <path
+    d="M20 14h20a11 11 0 0 1 0 22H28l14 20h-9.5L18 36V14zm8 7v8h12a4 4 0 0 0 0-8H28z"
+    fill="#4c86ff"
+  />
+  <circle cx="47" cy="47" r="6" fill="#128a5a" />
+</svg>

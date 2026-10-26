@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PennyTrack — Personal Expense Tracker</title>
+    <meta
+      name="description"
+      content="PennyTrack is a local, browser-based personal expense tracker built with HTML5, CSS3 and vanilla JavaScript."
+    />
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg" />
+    <link rel="stylesheet" href="css/style.css" />
+    <!--
+      Chart.js is loaded from a CDN. It is a normal (non-module) script with
+      "defer", so it finishes loading before the app.js module runs.
+      See the README for what happens when there is no internet connection.
+    -->
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+
+    <!-- ==================================================================
+         First-launch prompt: start empty or load clearly labelled demo data
+         ================================================================== -->
+    <div class="banner banner--info" id="demoBanner" role="region" aria-label="Getting started" hidden>
+      <div class="banner__text">
+        <strong>Welcome to PennyTrack.</strong>
+        <span>Would you like to explore the app with clearly labelled sample transactions?</span>
+      </div>
+      <div class="banner__actions">
+        <button class="btn btn--ghost btn--sm" id="startEmptyBtn" type="button">Start empty</button>
+        <button class="btn btn--primary btn--sm" id="loadDemoBtn" type="button">Load demo data</button>
+      </div>
+    </div>
+
+    <!-- Reminder shown while demo transactions still exist -->
+    <div class="banner banner--demo" id="demoActiveBanner" role="status" hidden>
+      <div class="banner__text">
+        <strong>Demo mode is active.</strong>
+        <span>Some transactions below are labelled <em>Demo</em> and are not your real data.</span>
+      </div>
+      <div class="banner__actions">
+        <button class="btn btn--ghost btn--sm" id="clearDemoBtn" type="button">Remove demo data</button>
+      </div>
+    </div>
+
+    <div class="app">
+      <!-- ============================== SIDEBAR ============================== -->
+      <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+        <div class="sidebar__brand">
+          <span class="sidebar__logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 3h9a4 4 0 0 1 0 8H6z" />
+              <path d="M6 11h3l6 10" />
+              <path d="M6 21h4" />
+              <path d="M6 3v18" />
+            </svg>
+          </span>
+          <span class="sidebar__name">PennyTrack</span>
+          <button class="icon-btn sidebar__close" id="sidebarClose" type="button" aria-label="Close navigation">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+
+        <nav class="sidebar__nav" id="sidebarNav">
+          <a class="nav-link is-active" href="#/dashboard" data-view="dashboard" aria-current="page">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="9" rx="1.5" />
+              <rect x="14" y="3" width="7" height="5" rx="1.5" />
+              <rect x="14" y="12" width="7" height="9" rx="1.5" />
+              <rect x="3" y="16" width="7" height="5" rx="1.5" />
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a class="nav-link" href="#/transactions" data-view="transactions">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 7h16M4 12h16M4 17h10" />
+            </svg>
+            <span>Transactions</span>
+          </a>
+          <a class="nav-link" href="#/analytics" data-view="analytics">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+            </svg>
+            <span>Analytics</span>
+          </a>
+          <a class="nav-link" href="#/settings" data-view="settings">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3.2" />
+              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.4l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3.5 15H3.3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.4-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9.5a1.7 1.7 0 0 0 1-1.6V3.3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.6 1h.2a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.6 1z" />
+            </svg>
+            <span>Settings</span>
+          </a>
+        </nav>
+
+        <p class="sidebar__footnote">
+          Data is stored only in this browser. It is not synced to any server.
+        </p>
+      </aside>
+
+      <div class="sidebar-scrim" id="sidebarScrim" hidden></div>
+
+      <!-- ================================ MAIN ================================ -->
+      <div class="main">
+        <header class="topbar">
+          <div class="topbar__heading">
+            <button class="icon-btn menu-toggle" id="menuToggle" type="button" aria-label="Open navigation"
+              aria-expanded="false" aria-controls="sidebar">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+            </button>
+            <div>
+              <h1 class="topbar__title" id="pageTitle">Dashboard</h1>
+              <p class="topbar__subtitle" id="pageSubtitle">Here is a summary of your money.</p>
+            </div>
+          </div>
+
+          <div class="topbar__actions">
+            <div class="search">
+              <svg class="search__icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20l-3.2-3.2" />
+              </svg>
+              <label class="sr-only" for="globalSearch">Search transactions by title</label>
+              <input class="search__input" id="globalSearch" type="search" placeholder="Search transactions…"
+                autocomplete="off" />
+            </div>
+
+            <p class="topbar__date" id="currentDate">&nbsp;</p>
+
+            <button class="btn btn--primary" id="addTxnBtn" type="button">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+              <span>Add Transaction</span>
+            </button>
+          </div>
+        </header>
+
+        <main class="content" id="main" tabindex="-1">
+          <!-- ------------------------------ DASHBOARD ------------------------------ -->
+          <section class="view is-active" id="view-dashboard" data-view-panel="dashboard"
+            aria-labelledby="pageTitle">
+            <h2 class="sr-only">Dashboard</h2>
+
+            <div class="stat-grid">
+              <article class="stat-card stat-card--balance">
+                <span class="stat-card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3v18M3 12h18" />
+                  </svg>
+                </span>
+                <p class="stat-card__label">Total Balance</p>
+                <p class="stat-card__value" id="statBalance">—</p>
+                <p class="stat-card__hint" id="statBalanceHint">Income minus expenses</p>
+              </article>
+
+              <article class="stat-card stat-card--income">
+                <span class="stat-card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 19V5M6 11l6-6 6 6" />
+                  </svg>
+                </span>
+                <p class="stat-card__label">Total Income</p>
+                <p class="stat-card__value" id="statIncome">—</p>
+                <p class="stat-card__hint" id="statIncomeHint">All income records</p>
+              </article>
+
+              <article class="stat-card stat-card--expense">
+                <span class="stat-card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14M6 13l6 6 6-6" />
+                  </svg>
+                </span>
+                <p class="stat-card__label">Total Expenses</p>
+                <p class="stat-card__value" id="statExpense">—</p>
+                <p class="stat-card__hint" id="statExpenseHint">All expense records</p>
+              </article>
+
+              <article class="stat-card stat-card--savings">
+                <span class="stat-card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 17l6-6 4 4 8-8" />
+                    <path d="M15 7h6v6" />
+                  </svg>
+                </span>
+                <p class="stat-card__label">Savings Rate</p>
+                <p class="stat-card__value" id="statSavings">—</p>
+                <p class="stat-card__hint" id="statSavingsHint">Income kept after expenses</p>
+              </article>
+            </div>
+
+            <div class="card">
+              <div class="card__header">
+                <div>
+                  <h3 class="card__title">Recent transactions</h3>
+                  <p class="card__subtitle">Your five latest records</p>
+                </div>
+                <button class="btn btn--ghost btn--sm" id="recentViewAll" type="button">View all</button>
+              </div>
+              <ul class="txn-list" id="recentList"></ul>
+              <p class="empty-state" id="recentEmpty">
+                No transactions yet. Use <strong>Add Transaction</strong> to record your first one.
+              </p>
+            </div>
+          </section>
+
+          <!-- ----------------------------- TRANSACTIONS ---------------------------- -->
+          <section class="view" id="view-transactions" data-view-panel="transactions" aria-labelledby="pageTitle"
+            hidden>
+            <h2 class="sr-only">Transaction history</h2>
+
+            <div class="card">
+              <div class="card__header">
+                <div>
+                  <h3 class="card__title">Filters</h3>
+                  <p class="card__subtitle" id="txnSummary">No transactions to show</p>
+                </div>
+                <button class="btn btn--ghost btn--sm" id="clearFiltersBtn" type="button">Clear filters</button>
+              </div>
+
+              <div class="filters">
+                <div class="field">
+                  <label class="field__label" for="filterType">Type</label>
+                  <select class="input" id="filterType">
+                    <option value="all">All types</option>
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label class="field__label" for="filterCategory">Category</label>
+                  <select class="input" id="filterCategory">
+                    <option value="all">All categories</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label class="field__label" for="filterFrom">From date</label>
+                  <input class="input" id="filterFrom" type="date" />
+                </div>
+
+                <div class="field">
+                  <label class="field__label" for="filterTo">To date</label>
+                  <input class="input" id="filterTo" type="date" />
+                </div>
+
+                <div class="field">
+                  <label class="field__label" for="sortBy">Sort by</label>
+                  <select class="input" id="sortBy">
+                    <option value="date-desc">Newest first</option>
+                    <option value="date-asc">Oldest first</option>
+                    <option value="amount-desc">Highest amount</option>
+                    <option value="amount-asc">Lowest amount</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card__header">
+                <h3 class="card__title">All transactions</h3>
+                <button class="btn btn--primary btn--sm" id="addTxnBtnInline" type="button">Add transaction</button>
+              </div>
+
+              <div class="table-wrap">
+                <table class="table" id="txnTable">
+                  <caption class="sr-only">Your recorded income and expense transactions</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Title</th>
+                      <th scope="col">Category</th>
+                      <th scope="col">Date</th>
+                      <th scope="col">Type</th>
+                      <th scope="col" class="is-numeric">Amount</th>
+                      <th scope="col"><span class="sr-only">Actions</span></th>
+                    </tr>
+                  </thead>
+                  <tbody id="txnTableBody"></tbody>
+                </table>
+              </div>
+
+              <p class="empty-state" id="txnEmpty" hidden>
+                No transactions match your filters. Try changing the search text or clearing the filters.
+              </p>
+            </div>
+          </section>
+
+          <!-- ------------------------------- ANALYTICS ------------------------------ -->
+          <section class="view" id="view-analytics" data-view-panel="analytics" aria-labelledby="pageTitle" hidden>
+            <h2 class="sr-only">Analytics</h2>
+
+            <p class="notice" id="chartsOfflineNote" role="status" hidden>
+              Charts could not load because Chart.js is served from the internet. Connect to the internet and refresh
+              the page to see the graphs.
+            </p>
+
+            <div class="chart-grid">
+              <article class="card chart-card chart-card--wide">
+                <div class="card__header">
+                  <div>
+                    <h3 class="card__title">Income vs Expenses</h3>
+                    <p class="card__subtitle">Monthly comparison for the last six months</p>
+                  </div>
+                </div>
+                <div class="chart-box">
+                  <canvas id="chartIncomeExpense" aria-label="Bar chart comparing monthly income and expenses"
+                    role="img"></canvas>
+                  <p class="empty-state empty-state--overlay" id="incomeExpenseEmpty" hidden>
+                    No data yet. Add a few transactions to see this chart.
+                  </p>
+                </div>
+              </article>
+
+              <article class="card chart-card">
+                <div class="card__header">
+                  <div>
+                    <h3 class="card__title">Expense Breakdown</h3>
+                    <p class="card__subtitle">Where your money goes</p>
+                  </div>
+                </div>
+                <div class="chart-box">
+                  <canvas id="chartCategory" aria-label="Doughnut chart of expenses by category" role="img"></canvas>
+                  <p class="empty-state empty-state--overlay" id="categoryEmpty" hidden>
+                    No expenses recorded yet.
+                  </p>
+                </div>
+              </article>
+
+              <article class="card chart-card">
+                <div class="card__header">
+                  <div>
+                    <h3 class="card__title">Spending Trends</h3>
+                    <p class="card__subtitle">Total expenses per month</p>
+                  </div>
+                </div>
+                <div class="chart-box">
+                  <canvas id="chartTrend" aria-label="Line chart of monthly spending" role="img"></canvas>
+                  <p class="empty-state empty-state--overlay" id="trendEmpty" hidden>
+                    No expenses recorded yet.
+                  </p>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <!-- ------------------------------- SETTINGS ------------------------------- -->
+          <section class="view" id="view-settings" data-view-panel="settings" aria-labelledby="pageTitle" hidden>
+            <h2 class="sr-only">Settings</h2>
+
+            <div class="settings-grid">
+              <div class="card">
+                <div class="card__header">
+                  <div>
+                    <h3 class="card__title">Currency &amp; formatting</h3>
+                    <p class="card__subtitle">Amounts are formatted with Intl.NumberFormat</p>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="currencySelect">Currency</label>
+                  <select class="input" id="currencySelect">
+                    <option value="INR">Indian Rupee (₹)</option>
+                    <option value="USD">US Dollar ($)</option>
+                    <option value="EUR">Euro (€)</option>
+                    <option value="GBP">British Pound (£)</option>
+                  </select>
+                  <p class="field__hint">Rupee is the default. Changing this only affects how numbers are displayed.</p>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card__header">
+                  <div>
+                    <h3 class="card__title">Your data</h3>
+                    <p class="card__subtitle" id="storageInfo">—</p>
+                  </div>
+                </div>
+                <div class="button-row">
+                  <button class="btn btn--ghost" id="exportCsvBtn" type="button">Export as CSV</button>
+                  <button class="btn btn--ghost" id="loadDemoSettingsBtn" type="button">Load demo data</button>
+                  <button class="btn btn--ghost" id="clearDemoBtnSettings" type="button">Remove demo data</button>
+                  <button class="btn btn--danger" id="clearAllBtn" type="button">Clear all data</button>
+                </div>
+                <p class="field__hint">
+                  Everything lives in this browser's localStorage. Clearing your browser data will also remove it.
+                </p>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- ================================= MODALS ================================= -->
+    <div class="modal" id="txnModal" hidden>
+      <div class="modal__backdrop" data-close-modal="txnModal"></div>
+      <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <header class="modal__header">
+          <h2 class="modal__title" id="modalTitle">Add transaction</h2>
+          <button class="icon-btn" id="modalClose" type="button" aria-label="Close dialog">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </header>
+
+        <form class="modal__body" id="txnForm" novalidate>
+          <input type="hidden" id="txnId" />
+
+          <div class="field">
+            <label class="field__label" for="txnTitle">Title <span class="req">*</span></label>
+            <input class="input" id="txnTitle" name="title" type="text" maxlength="60" placeholder="e.g. Grocery shopping"
+              autocomplete="off" />
+            <p class="field__error" id="errorTitle" role="alert"></p>
+          </div>
+
+          <fieldset class="field">
+            <legend class="field__label">Type <span class="req">*</span></legend>
+            <div class="segmented">
+              <label class="segmented__option">
+                <input type="radio" name="type" value="expense" checked />
+                <span>Expense</span>
+              </label>
+              <label class="segmented__option">
+                <input type="radio" name="type" value="income" />
+                <span>Income</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field__label" for="txnAmount">Amount <span class="req">*</span></label>
+              <input class="input" id="txnAmount" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal"
+                placeholder="0.00" />
+              <p class="field__error" id="errorAmount" role="alert"></p>
+            </div>
+
+            <div class="field">
+              <label class="field__label" for="txnCategory">Category <span class="req">*</span></label>
+              <select class="input" id="txnCategory" name="category"></select>
+              <p class="field__error" id="errorCategory" role="alert"></p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="txnDate">Date <span class="req">*</span></label>
+            <input class="input" id="txnDate" name="date" type="date" />
+            <p class="field__error" id="errorDate" role="alert"></p>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="txnDescription">Description <span class="opt">(optional)</span></label>
+            <textarea class="input" id="txnDescription" name="description" rows="2" maxlength="160"
+              placeholder="Add a short note…"></textarea>
+          </div>
+
+          <p class="form-error" id="formError" role="alert" hidden></p>
+
+          <footer class="modal__footer">
+            <button class="btn btn--ghost" id="modalCancel" type="button">Cancel</button>
+            <button class="btn btn--primary" id="modalSubmit" type="submit">Save transaction</button>
+          </footer>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal" id="confirmModal" hidden>
+      <div class="modal__backdrop" data-close-modal="confirmModal"></div>
+      <div class="modal__panel modal__panel--sm" role="alertdialog" aria-modal="true"
+        aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
+        <header class="modal__header">
+          <h2 class="modal__title" id="confirmTitle">Are you sure?</h2>
+        </header>
+        <div class="modal__body">
+          <p class="confirm__message" id="confirmMessage"></p>
+          <footer class="modal__footer">
+            <button class="btn btn--ghost" id="confirmCancel" type="button">Cancel</button>
+            <button class="btn btn--danger" id="confirmOk" type="button">Confirm</button>
+          </footer>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-region" id="toastRegion" role="region" aria-live="polite" aria-label="Notifications"></div>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
